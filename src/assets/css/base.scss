@@ -1,0 +1,8 @@
+//定义默认字体大小(根据实际情况自由调整)
+$browser-default-font-size:37.5px!default;//iphone6
+html,body{
+    font-size:$browser-default-font-size;
+}
+@function px2rem($px){
+    @return $px/$browser-default-font-size*1rem;
+}
