@@ -1,5 +1,6 @@
 var glob = require('glob');
 var path = require('path');
+
 //配置pages多页面获取当前文件夹下的html和js
 function getEntry(globPath) {
 	let entries = {};
