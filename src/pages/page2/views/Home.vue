@@ -13,19 +13,10 @@ export default {
     
   },
   mounted(){
-    this.getData()
   },
   methods:{
     go(){
       window.location.href="/page1.html"
-    },
-    getData(){
-      const params = {
-        aa:3
-      };
-      this.$https.getInfo(params).then(res=>{
-        console.log(res);
-      });
     }
   }
 }

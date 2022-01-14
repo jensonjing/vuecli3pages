@@ -6,6 +6,7 @@
 
 <script>
 // @ is an alias to /src
+import { getData } from '@/server/https'
 
 export default {
   name: 'home',
@@ -16,13 +17,15 @@ export default {
     go(){
       window.location.href="/page2.html"
     },
-    getData(){
-      let params = {
-        aa:1
-      };
-      this.$https.getData(params).then(res=>{
-        console.log(res);
-      });
+    async getData(){
+      const {code, data, msg} = await getData({
+        code: '123'
+      })
+      if (code === 200) {
+
+      } else {
+        console.log('获取信息失败')
+      }
     }
   },
   mounted(){

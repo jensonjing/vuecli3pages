@@ -1,76 +1,109 @@
 import axios from 'axios';
-import qs from 'qs';
+import { utility } from './common'
 
-import { config } from './config.js';
-import { utility } from './common.js';
-
-//这里借用element的组件
-//import { Loading } from 'element-ui'
-
-const obj = {
-    getAxios:(type,url,params,token)=>{
-        //axios的请求拦截器
-        axios.defaults.withCredentials=true;//允许携带cookie
-        //axios的请求拦截器
-        axios.interceptors.request.use(data=>{
-            //这里是请求前的操作，可以执行其它自定义任务，例如进行请求前的一些操作。
-            //例如：在请求前有一个加载loading状态,这里借用element ui Loading方法
-            /*
-            loadinginstace = Loading.service({
-                lock: true,
-                text: '正在加载中,请稍后...',
-                spinner: 'el-icon-loading',
-                background: 'rgba(0, 0, 0, 0.3)',
-                customClass:"osloading",
-                fullscreen: true 
-            });
-            */
-            data.timeout = config.timeout;//设置超时时间
-            console.log('请求前');
-            return data;
-        },error=>{
-            // loadinginstace.close();//失败关闭加载窗
-            return new Promise((res,rej)=>{
-                res(error);
-            });
-        });
-        if(type.toUpperCase()=='GET'||type.toUpperCase()=='DELETE'){
-            if(params=='undefined'||params==undefined){
-                params = {};
-            };
-            params = utility.splitObj(params);
-            return new Promise((resolve,reject)=>{
-                axios({
-                    method:type,
-                    headers: {
-                        'token':token?token:null
-                    },
-                    url:config.http_url + url + params
-                }).then(response=>{
-                    resolve(response)
-                }).catch(err=>{
-                    reject(err.response)
-                });
-            })
-        }else if(type.toUpperCase()=='POST'||type.toUpperCase()=='PUT'){
-            return new Promise((resolve,reject)=>{
-                axios({
-                    url: config.http_url + url,
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
-                        'token':token?token:null
-                    },
-                    method:type,
-                    responseType: 'json',
-                    data:qs.stringify(params)
-                }).then(response=>{
-                    resolve(response)
-                }).catch(err=>{
-                    reject(err.response);
-                });
-            });
-        };
-    }
+const ajax = (options) => {
+    return new Promise((res, rej) => {
+        const instance = axios.create({
+            baseURL: window.config?.VUE_APP_API_URL || process.env.VUE_APP_API_URL
+        })
+        // request 拦截器
+        instance.interceptors.request.use(
+            config => {
+                const token = sessionStorage.getItem('token')
+                if(token){
+                    config.headers.Authorization = "Bearer " + token
+                }
+                if (config.method.toLocaleLowerCase() === 'get') {
+                    if (config.data) {
+                        config.url += utility.splitObj(config.data)
+                    }
+                }
+                return config
+            },
+            error => {
+                return Promise.reject(error)
+            }
+        )
+        // response 拦截器
+        instance.interceptors.response.use(
+            response => {
+              let data;
+              // IE9时response.data是undefined，因此需要使用response.request.responseText(Stringify后的字符串)
+              if (response.data == undefined) {
+                data = response.request.responseText
+              } else {
+                data = response.data
+              }
+              // 根据返回的code值来做不同的处理（和后端约定）
+              switch (data.code) {
+                case '401':
+                  break;
+                default:
+              }
+              return data
+            },
+            err => {
+              if (err && err.response) {
+                switch (err.response.status) {
+                  case 400:
+                    err.message = '请求错误'
+                    break
+      
+                  case 401:
+                    err.message = 'Token校验失败'
+                    break
+      
+                  case 403:
+                    err.message = '拒绝访问'
+                    break
+      
+                  case 404:
+                    err.message = `请求地址出错: ${err.response.config.url}`
+                    break
+      
+                  case 408:
+                    err.message = '请求超时'
+                    break
+      
+                  case 500:
+                    err.message = '服务器内部错误'
+                    break
+      
+                  case 501:
+                    err.message = '服务未实现'
+                    break
+      
+                  case 502:
+                    err.message = '网关错误'
+                    break
+      
+                  case 503:
+                    err.message = '服务不可用'
+                    break
+      
+                  case 504:
+                    err.message = '网关超时'
+                    break
+      
+                  case 505:
+                    err.message = 'HTTP版本不受支持'
+                    break
+      
+                  default:
+                }
+              } 
+              console.error(err)
+              return Promise.reject(err) // 返回接口返回的错误信息
+            }
+        )
+        //请求处理
+        instance(options).then((res) => {
+            resolve(res)
+            return false
+        }).catch((error) => {
+            reject(error)
+        })
+    })
 }
 
-export default obj;
+export default ajax

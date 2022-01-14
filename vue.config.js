@@ -37,10 +37,9 @@ module.exports = {
       //跨域代理
       proxy: {
           '/api':{
-            // target:'http://127.0.0.1:80',//dev环境
-            // target:'http://23.33.256.23:80',//test环境
-            target:'http://www.baidu.com',//正式环境
-            changeOrigin:true,
+            target:'http://www.baidu.com',// 测试环境
+            changeOrigin: true,
+            secure: false, // 不校验证书(https接口不能省略此参数)
             timeout:5000,//设置超时时间
             pathRewrite:{
                 "^/api":""
